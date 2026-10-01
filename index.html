@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="像素风 UX 破题板：每块板拆一个体验问题，可离线使用。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="破题板">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<title>企鹅破题板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Silkscreen:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+.toolbar .ghost{font-size:11px;padding:6px 10px;min-height:36px;box-shadow:2px 2px 0 var(--ink)}
+.file-hide{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+:root{
+  color-scheme: light;
+  --paper:#FFFFFF; --ink:#0B0B0B; --grey:#6E6E6E; --line:#0B0B0B; --soft:#F1F1F1; --dot:#DADADA;
+  --flash:#FFD23F;
+  --pix:"Silkscreen","DotGothic16",ui-monospace,monospace;
+  --dotf:"DotGothic16","Noto Sans SC",ui-monospace,monospace;
+  --body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--paper);color:var(--ink)}
+body{
+  font-family:var(--body);font-size:15px;line-height:1.7;
+  background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:12px 12px;
+  padding-inline:16px;padding-block:0 64px;min-height:100%;
+}
+.wrap{max-width:1080px;margin:0 auto}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px dashed var(--ink);outline-offset:3px}
+
+/* pixel primitives */
+.px-box{background:var(--paper);border:3px solid var(--line);box-shadow:4px 4px 0 var(--ink)}
+.btn{
+  font-family:var(--pix);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--paper);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);
+  padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:40px;
+  transition:transform .06s steps(2),box-shadow .06s steps(2),background-color .12s steps(2);
+}
+.btn .zh{font-family:var(--dotf);text-transform:none;letter-spacing:0;font-size:14px}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.flash,.card.flash,.chip.flash{background:var(--flash)!important;color:var(--ink)!important}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn.danger{border-style:dashed}
+
+/* header */
+header{display:grid;gap:18px;padding-block:28px 20px}
+.peng-wrap{display:flex;align-items:flex-start;gap:16px}
+#peng:focus:not(:focus-visible){outline:none}
+#peng{width:112px;flex:none;height:auto;image-rendering:pixelated;cursor:pointer;display:block;touch-action:manipulation}
+#peng.hop{animation:hop .36s steps(3)}
+@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+#peng .eye{animation:blink 4.2s steps(1) infinite}
+@keyframes blink{0%,94%{fill:var(--ink)}95%,99%{fill:#fff}}
+.bubble{
+  position:relative;margin-top:14px;max-width:320px;
+  font-family:var(--dotf);font-size:13px;line-height:1.5;padding:8px 10px;z-index:3;
+}
+.bubble::before{content:"";position:absolute;left:-9px;top:18px;width:9px;height:9px;background:var(--ink)}
+.title-block h1{font-family:var(--dotf);font-weight:400;font-size:clamp(30px,6vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+.title-block .en{font-family:var(--pix);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 6px}
+.title-block p{margin:8px 0 0;color:var(--grey);max-width:56ch}
+
+/* toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px;margin-bottom:14px}
+.search{flex:1 1 220px;display:flex;align-items:center;gap:8px;border:3px solid var(--ink);padding:0 10px;min-height:40px;background:var(--paper)}
+.search input{border:0;outline:0;background:transparent;width:100%;padding:6px 0}
+.search span{font-family:var(--pix);font-size:11px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.chip{
+  font-family:var(--dotf);font-size:13px;padding:4px 10px;border:2px solid var(--ink);background:var(--paper);cursor:pointer;
+}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.status{font-family:var(--pix);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);display:flex;align-items:center;gap:6px;margin-left:auto}
+.status i{display:inline-block;width:8px;height:8px;background:var(--grey)}
+.status.live i{background:var(--ink)}
+
+/* grid of cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px}
+.card{
+  text-align:left;cursor:pointer;padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;
+  border:3px solid var(--ink);background:var(--paper);box-shadow:5px 5px 0 var(--ink);
+  transition:transform .08s steps(2),box-shadow .08s steps(2),background-color .15s steps(2);
+}
+.card:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+.card:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
+.card .meta{display:flex;justify-content:space-between;align-items:center;font-family:var(--pix);font-size:11px;letter-spacing:.08em}
+.card .tag{font-family:var(--dotf);font-size:12px;border:2px solid var(--ink);padding:0 6px;letter-spacing:0}
+.card h2{font-family:var(--dotf);font-weight:400;font-size:26px;line-height:1.2;margin:0;text-wrap:balance}
+.card .sub{margin:0;font-weight:500}
+.card .case{font-size:13px;display:flex;gap:8px;align-items:baseline;border-top:2px dashed var(--ink);padding-top:10px}
+.card .case b{font-family:var(--pix);font-size:10px;letter-spacing:.08em;white-space:nowrap}
+.card .q{font-size:13px;color:var(--grey);margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .done{font-family:var(--pix);font-size:10px;background:var(--ink);color:var(--paper);padding:1px 6px}
+.add-card{border-style:dashed;box-shadow:none;align-items:center;justify-content:center;min-height:220px;text-align:center;font-family:var(--dotf);font-size:18px}
+.add-card .plus{font-family:var(--pix);font-size:40px;line-height:1}
+.empty{grid-column:1/-1;padding:28px;text-align:center;font-family:var(--dotf)}
+
+/* overlay panels */
+.overlay{position:fixed;inset:0;background:rgba(11,11,11,.55);display:flex;align-items:flex-start;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px);overflow-y:auto;z-index:20}
+.panel{width:100%;max-width:760px;background:var(--paper);border:3px solid var(--ink);box-shadow:8px 8px 0 var(--ink);padding:24px}
+.panel-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.panel h2{font-family:var(--dotf);font-weight:400;font-size:clamp(26px,5vw,38px);line-height:1.15;margin:4px 0 4px;text-wrap:balance}
+.panel .kicker{font-family:var(--pix);font-size:11px;letter-spacing:.1em}
+.panel .sub{font-weight:700;margin:0}
+.x{font-family:var(--pix);width:40px;height:40px;border:3px solid var(--ink);background:var(--paper);cursor:pointer;flex:none;font-size:14px}
+.sec{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:14px 0;border-top:2px solid var(--ink)}
+.sec .lab{font-family:var(--dotf);font-size:14px}
+.sec .lab small{display:block;font-family:var(--pix);font-size:9px;letter-spacing:.1em;color:var(--grey)}
+.sec p{margin:0;max-width:62ch;white-space:pre-wrap}
+.sec.case-sec .body{border:3px solid var(--ink);padding:12px 14px;background:var(--soft)}
+.sec.case-sec h3{font-family:var(--dotf);font-weight:400;font-size:18px;margin:0 0 6px}
+.qbox{background:var(--ink);color:var(--paper);padding:18px;margin-top:8px}
+.qbox .lab{font-family:var(--pix);font-size:11px;letter-spacing:.1em}
+.qbox p{font-family:var(--dotf);font-size:18px;line-height:1.55;margin:6px 0 12px}
+.qbox textarea{width:100%;min-height:96px;background:var(--ink);color:var(--paper);border:2px dashed var(--paper);padding:10px;resize:vertical}
+.qbox .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.qbox .btn{background:var(--paper);color:var(--ink);box-shadow:3px 3px 0 #777}
+.qbox small{font-family:var(--pix);font-size:10px;letter-spacing:.06em;color:#bbb}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;justify-content:flex-end}
+
+/* form */
+.form{display:grid;gap:14px}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:grid;gap:4px}
+.field label{font-family:var(--dotf);font-size:14px}
+.field label small{font-family:var(--pix);font-size:9px;letter-spacing:.1em;color:var(--grey);margin-left:6px}
+.field input,.field textarea{border:3px solid var(--ink);background:var(--paper);padding:8px 10px;width:100%;outline:0}
+.field input:focus,.field textarea:focus{box-shadow:3px 3px 0 var(--ink)}
+.field textarea{min-height:76px;resize:vertical}
+.err{font-family:var(--dotf);font-size:13px;border:2px solid var(--ink);padding:6px 10px;background:var(--flash)}
+.confirm{border:3px dashed var(--ink);padding:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;font-family:var(--dotf)}
+
+/* toast + particles */
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);font-family:var(--dotf);padding:10px 16px;z-index:40;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--flash)}
+.pxl{position:fixed;width:8px;height:8px;pointer-events:none;z-index:50;animation:fly .5s steps(5) forwards}
+@keyframes fly{to{transform:translate(var(--dx),var(--dy));opacity:0}}
+footer{margin-top:36px;font-family:var(--pix);font-size:10px;letter-spacing:.1em;color:var(--grey);text-transform:uppercase}
+
+@media (max-width:640px){
+  header{grid-template-columns:1fr;gap:12px}
+  #peng{width:88px}
+  .sec{grid-template-columns:1fr;gap:4px}
+  .form .two{grid-template-columns:1fr}
+  .panel{padding:18px}
+  .grid{grid-template-columns:1fr}
+  .status{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="peng-wrap">
+      <svg id="peng" viewBox="0 0 16 18" shape-rendering="crispEdges" role="button" tabindex="0" aria-label="企鹅小P，点我给你一个提示"></svg>
+      <div class="bubble px-box" id="bubble">嗨，我是小P。点我换一句破题口诀。</div>
+    </div>
+    <div class="title-block">
+      <p class="en">UX Puzzle Board · App</p>
+      <h1>企鹅破题板</h1>
+      <p>每一块板子拆一个体验问题：画面、设计思维、UX 策略、改进办法、一个大厂案例，最后留一道题给自己。</p>
+    </div>
+  </header>
+
+  <div class="toolbar px-box">
+    <label class="search" for="q"><span>FIND</span><input id="q" type="search" placeholder="搜标题、案例、关键词…" autocomplete="off"></label>
+    <button class="btn primary" id="newBtn" type="button"><span>+ NEW</span><span class="zh">新板块</span></button>
+    <button class="btn ghost" id="exportBtn" type="button"><span class="zh">导出备份</span></button>
+    <button class="btn ghost" id="importBtn" type="button"><span class="zh">导入</span></button>
+    <input class="file-hide" id="importFile" type="file" accept="application/json,.json" aria-label="选择备份文件">
+    <div class="status" id="status"><i></i><span>连接中</span></div>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="按标签筛选"></div>
+
+  <main class="grid" id="grid" aria-live="polite"></main>
+
+  <footer>Press any pixel · 每一次点击都会冒出一点颜色</footer>
+</div>
+
+<div class="overlay" id="overlay" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const FALLBACK = [{"answer": "", "caseBody": "进度条已经走到 98%，旁边写着“还差 0.8 元”，按钮是一个巨大的红色“邀请好友帮砍”。它把增长循环嵌进了用户自己的利益里：想拿免费商品就要拉人，被拉的人点开后又被引导发起自己的砍价。教训同样明显：进度越到后面越难走，会持续消耗信任。", "caseName": "拼多多 · 砍一刀", "fix": "进度可视化；用“离目标很近”的提示推动行动；为被邀请者设计专属落地页；同时评估用户多久后会觉得被套路，避免透支信任。", "order": 1, "question": "你的产品里，一个老用户在什么情况下会自然地想把它发给朋友？如果答案是“几乎不会”，问题出在分享按钮，还是出在产品价值本身？", "scene": "想象一条水管：用户从一端流进来，大部分在中途漏掉，只有少数流到付费那一端，这就是 AARRR 漏斗（获客、激活、留存、变现、推荐）。但真正有效的增长更像一个水车：老用户转动轮子，把新用户带进来，新用户又成为下一个转动者。", "strategy": "把分享、邀请设计成用户完成自身目标的一部分，而不是额外负担。被邀请的人一落地，就要看到自己也能得到什么。", "sub": "把增长画成一个循环，而不是一条漏斗", "tag": "增长", "thinking": "先找到产品的 Aha 时刻，也就是用户第一次真正感到“这东西有用”的那一刻。然后把界面中所有步骤往这个时刻压缩，让新用户尽早抵达。", "title": "用户增长模型", "updatedAt": 1790614274440, "id": "growth"}, {"answer": "最大门槛其实是在公开场合自我披露的社交评价焦虑。1身份认知惯性被打破，不再处于低风险安全区；2 预期落差恐惧，怕没人看没共鸣，心理难堪的焦虑 3平台入口与公域曝光强绑定，无形中放大发布压力 发布和公域流量池绑定，第一个接收的信号不是我去分享自己的内容，而是我把自己放到了陌生人的评判广场。套上了心理枷锁。", "caseBody": "点开加号，看到的不是空白输入框，而是模板、滤镜、话题标签和写作灵感，照片选好，封面就已经像模像样。它在界面里直接消化了“我不会写、我拍得不好看”这两个心理障碍，话题标签又降低了“发了没人看”的担心。", "caseName": "小红书 · 发布笔记", "fix": "给新人可套用的内容结构；发布后短时间内给予可见反馈（浏览、点赞、系统鼓励）；让点赞、收藏、投票这类低成本参与始终在第一视线内。", "order": 2, "question": "你的社区里，一个新用户从“只看不说”到“发出第一条内容”，中间最大的那道心理门槛是什么？你的界面有没有正面处理它？", "scene": "一个空荡荡的房间：墙上什么都没有，没人说话，新来的人站在门口不敢进去。社区增长最难的不是拉人，而是让人留下并开口。", "strategy": "让围观者轻松点个赞，让互动者容易写一句评论，让潜在创作者敢发第一篇内容。发出去之后要尽快收到反馈，否则不会有第二次。", "sub": "先解决“第一次发言”的恐惧", "tag": "社区", "thinking": "社区里有三类人：少数创作者、一部分互动者、大量围观者。系统地看，设计的任务是让每一层都更容易往上走一步。", "title": "社群 / 社区增长", "updatedAt": 1790616047605, "id": "community"}, {"answer": "", "caseBody": "眼睛先落到店铺图片和加粗店名，然后是评分和月售，再到配送时间和距离，最底下是红色满减小标签。接近十个信息点却不乱：名字负责“认”，评分月售负责“信”，配送时间负责“能不能等”，优惠标签负责“最后推一把”。", "caseName": "美团外卖 · 商家卡片", "fix": "把信息按“认、信、判断、促动”分层；把次要信息压小、压灰或折叠；做眯眼测试，模糊画面里是否还能一眼看出主信息。", "order": 3, "question": "拿出你设计里的一张卡片，只允许保留三个信息，你会删掉什么？删掉后用户真的会失去判断能力吗？", "scene": "一个菜市场，每个摊主都在同时吆喝，你什么都听不清。这就是层级失败的卡片：标题、价格、标签、评分一样粗、一样亮。", "strategy": "用字号、字重、颜色、留白四个旋钮拉开层级，主信息只能有一个。", "sub": "一张卡只让一个信息大声说话", "tag": "信息层级", "thinking": "先问：用户扫到这张卡的 0.5 秒里要做什么决定？按决策顺序排信息。第一眼决定要不要点，第二眼确认条件，其余退到背景。", "title": "卡片信息放大与排版", "updatedAt": 1790614274440, "id": "card"}, {"answer": "", "caseBody": "顶部是扫一扫、收付款、出行、卡包，位置几乎不变，形成肌肉记忆；下面一排应用图标可以自己编辑；再往下是更多服务和推荐。承载支付、理财、缴费、出行、政务等大量业务，却不像迷宫，因为最常用的东西永远在拇指最容易够到的地方。", "caseName": "支付宝 · 首页金刚区", "fix": "用数据找出前 20% 高频功能并固定位置；允许用户自定义；给长尾功能提供强搜索；推荐区与工具区在视觉上明确分开。", "order": 4, "question": "如果首页只能保留一屏，哪些模块必须在？哪些其实只是“业务方想被看见”，而不是“用户需要看见”？", "scene": "一个超大商场的大门：进门就是几百家店铺的平面图，人会直接懵掉。好的商场在入口给你一张清晰导览，再加上“你最近常去的店”。", "strategy": "区分“用户主动找的”和“平台想推的”：前者位置要稳定，后者要克制。", "sub": "不是全放上去，而是给每个人一个入口", "tag": "首页", "thinking": "业务方都想要首页位置，用户只关心自己那两三件事。把首页分层：固定核心功能区、可个性化常用区、动态推荐区，再加一个“全部”入口兜底。", "title": "首页 All in One", "updatedAt": 1790614274440, "id": "home"}, {"answer": "", "caseBody": "点“立即购买”，底部弹出半屏浮层：商品图随颜色即时切换，价格随规格实时刷新，库存紧张会提示，数量在右侧加减，底部是醒目的确认按钮。选规格、看价格、做决定都在一个画面里完成，确认页地址和支付方式已默认填好。", "caseName": "淘宝 · 规格选择浮层", "fix": "每个选择即时反馈结果；提前说清楚总价和优惠；记住用户给过的全部信息；支付前一步给出退换和售后的安心提示。", "order": 5, "question": "在你的购买流程里，用户最可能在哪一步犹豫或放弃？那一刻他缺的是信息、信任，还是耐心？", "scene": "一个收银台：你拿着商品排到了前面，收银员却让你先填表、再选会员、再确认地址，你很可能把商品放下走人。", "strategy": "在用户犹豫的点提供确定性，在用户已经决定的点让路。", "sub": "让每一步都在接近目标，而不是被拦截", "tag": "转化", "thinking": "把决策成本和操作成本分开看。决策成本靠清晰信息和信任感降低，操作成本靠减少步骤和智能默认值降低。", "title": "购买流程", "updatedAt": 1790614274440, "id": "buy"}, {"answer": "", "caseBody": "第一次打开，没有功能介绍，几乎直接就是一条全屏视频在播放。你不需要知道“推荐算法”是什么，上滑、停留、点赞这几个动作本身就是在告诉系统你的兴趣，刷几条之后内容就越来越对胃口。引导被藏进了使用里，用户感觉不到自己在被教。", "caseName": "抖音 · 首次打开", "fix": "砍掉启动后的多页介绍；能跳过的注册和授权都往后放；用真实内容代替教学动画；功能提示只在用户第一次走到那里时出现一次。", "order": 6, "question": "你的产品打开后，用户要经过几步才能第一次感到“有用”？哪一步其实可以挪到之后再做？", "scene": "一个新开的游乐园：门口站着工作人员，拉着每位游客先听二十分钟安全须知和地图讲解，等讲完，一半人已经转身走了。好的游乐园让你先坐上一个小项目，规则在排队时顺手看到。", "strategy": "先体验、后注册；先做、后教。把必须收集的信息拆散，在真正用到时再问，而不是在门口一次收完。", "sub": "别先讲规则，先让人玩起来", "tag": "新手引导", "thinking": "新用户在前几分钟只回答一个问题：这东西对我有没有用。引导的任务不是教会所有功能，而是用最短路径把他送到第一次价值体验，其余功能留到他需要的时候再出现。", "title": "新手引导", "updatedAt": 1790900000000, "id": "onboarding"}, {"answer": "", "caseBody": "点开搜索框，下面已经摆好了“加油站、停车场、美食、酒店”这类常用入口和你的历史记录。点“加油站”后，地图上立刻出现一串标点，下方列表同步按距离排好，每一条都有距离和大致位置，并能直接点“路线”。用户从“我想加油”到“开过去”只隔着两三次点击，地图和列表的联动让人同时看清“有哪些”和“在哪儿”。", "caseName": "高德地图 · 周边搜索", "fix": "空输入状态不要留白；联想词里直接带上分类或数量；结果页把最常用的两三个筛选项露在外面；零结果时给出相近建议，而不是一句“没有找到”。", "order": 7, "question": "你的产品里，用户搜索失败时通常是因为不会描述，还是因为结果太多？你的界面分别怎么接住这两种情况？", "scene": "你走进一家很大的书店，对店员说“我想找本关于旅行的书”。差的店员甩给你一个书架编号；好的店员会追问“国内还是国外？游记还是攻略？”，然后把三本最可能的书递到你手里。", "strategy": "在输入前提供最近搜索和热门入口；在输入中用联想补全意图；在结果页用分类和筛选让用户低成本地收窄范围，而不是重新输入。", "sub": "用户说不清要什么，界面要帮他说清", "tag": "搜索", "thinking": "搜索不是一个输入框，而是一段对话：输入前猜测意图，输入中给联想，输入后给结果并允许修正。每一步都在缩小用户脑中模糊的目标和系统里精确数据之间的距离。", "title": "搜索与结果页", "updatedAt": 1790900000000, "id": "search"}, {"answer": "", "caseBody": "群聊可以设为“消息免打扰”，之后新消息只显示一个小红点，而不是不断增长的数字，你知道有动静，但不会被逼着去看。公众号的推送被收进一个统一入口，不和朋友的消息抢位置。最重要的人与人的对话始终在列表最显眼处，次要的信息被一层层降级。", "caseName": "微信 · 免打扰与消息折叠", "fix": "给通知分级：强提醒、角标、静默汇总三档；营销类消息默认折叠；提供按来源的免打扰开关；定期检查每类通知的打开率，长期没人点的就降级。", "order": 8, "question": "在你的产品里，如果用户只允许你发一种通知，你会选哪一种？剩下的那些通知还有存在的必要吗？", "scene": "一个总是在响的门铃：一开始你每次都跑去开门，后来发现大部分是推销，于是干脆把门铃拔了，连真正的朋友来敲门也听不见了。", "strategy": "重要的事情及时、明确地打扰；不重要的事情汇总、折叠、静默；把控制权交还给用户，让他决定什么值得被打扰。", "sub": "每一个红点都在消耗用户的信任", "tag": "通知", "thinking": "通知的价值取决于它的信噪比。系统地看，消息要按“和我有多相关、需要我多快处理”分级，不同级别用不同强度的打扰方式，而不是全部用同一个红色数字。", "title": "消息通知", "updatedAt": 1790900000000, "id": "notify"}, {"answer": "", "caseBody": "播放会员专属歌曲时，往往可以先试听一段，听到正入迷时，界面提示开通会员即可听完整版，按钮就在播放器里。这时付费的理由不是一张抽象的权益表，而是“我现在就想听完这首歌”。付费墙出现在需求最强烈的那一秒，转化的阻力自然更小。", "caseName": "网易云音乐 · 会员歌曲试听", "fix": "把会员权益翻译成用户正在做的事（例如“这首歌可以听完整版”），而不是一张权益清单；提供试用或首月优惠降低门槛；续费规则和取消方式写清楚，避免事后觉得被坑。", "order": 9, "question": "你的产品里，用户最可能在哪一刻觉得“要是能再多一点就好了”？付费入口现在出现在那一刻吗？", "scene": "一家面包店：一种做法是门口贴满“会员八折”的海报；另一种是递给你一小块刚出炉的试吃，等你说“好吃”的时候，再告诉你会员每天能拿一个。", "strategy": "让免费体验足够好，让付费的差别具体可感；付费入口出现在用户想要更多的瞬间，并清楚说明买了之后马上能得到什么。", "sub": "先让人尝到甜头，再请他买单", "tag": "付费转化", "thinking": "付费决策发生在用户感受到价值缺口的那一刻：他已经体验到了好处，又发现还差一点。设计的任务是找到并放大这个时刻，而不是在任意位置拦路收费。", "title": "会员与付费墙", "updatedAt": 1790900000000, "id": "paywall"}, {"answer": "", "caseBody": "下单后，地图上能看到司机的小车图标正在一点点向你移动，上方写着预计几分钟到达、距离多远，车牌、车型和颜色也清楚列出。你不需要反复打电话问“到哪了”，因为答案一直在屏幕上更新。等待的时间没有变短，但不确定感被拆掉了，人自然更安心。", "caseName": "滴滴出行 · 等待接驾", "fix": "用骨架屏代替空白和转圈；进度尽量用具体数字或位置表达；超过预期时间要主动说明原因；长时间任务允许后台进行并在完成时通知。", "order": 10, "question": "你的产品里，用户在哪一段等待中最焦虑？你能不能把那段时间里“看不见的东西”变成看得见的？", "scene": "站在公交站等车：一种是什么信息都没有，你不知道车还有多久，会不会来；另一种是站牌显示“下一班 3 分钟”，同样的等待，后一种你可以放心刷会儿手机。", "strategy": "用可视化的进度和具体的预期时间降低焦虑；用占位内容让页面先“有形状”；在等待中给用户可以做的事，或者明确告诉他可以离开。", "sub": "等待本身不可怕，看不见进度才可怕", "tag": "等待体验", "thinking": "等待的痛苦来自不确定性，而不只是时间长度。设计要把“黑盒”变成“玻璃盒”：告诉用户现在在发生什么、还要多久、有没有出问题，以及他能不能先做点别的。", "title": "等待与加载", "updatedAt": 1790900000000, "id": "waiting"}, {"answer": "", "caseBody": "POIZON 把“Authentication Before Shipping”作为核心卖点：卖家先把商品寄到平台的鉴别中心，由人工鉴别师结合 AI 检查走线、标签、包装等细节，通过后才发给买家，订单可在账户里实时追踪。它在官网用“已鉴别数亿件商品”这类规模数字和大量真假对比的鉴别科普内容建立认知，让一个海外用户在不认识这个品牌的情况下，也能理解“为什么这里买更放心”。", "caseName": "POIZON（得物海外版）· 先鉴别后发货", "fix": "在商品页就说清楚保障机制，而不是藏在 FAQ；把鉴别作为订单进度里单独的一步展示；用具体数字和细节代替“100% 正品”这类空话；保障说明用当地用户熟悉的语言和比喻重写，而不是直译。", "order": 11, "question": "如果你的产品明天上线一个完全陌生的海外市场，用户在付款前最担心的是什么？你的界面里有哪一个元素能直接回答这个担心？", "scene": "在国外二手市场买一双限量球鞋：卖家你不认识，鞋你摸不到，平台你也没听说过。这时候价格再便宜，你心里只有一个问题：它是不是真的？", "strategy": "把看不见的保障做成看得见的流程节点：告诉用户谁在检查、检查了什么、现在到哪一步。用第三方信号（评分、规模数字）补足陌生品牌缺少的口碑。", "sub": "陌生市场里，用户先买的是“放心”", "tag": "出海·信任", "thinking": "出海产品最大的成本不是物流，而是信任从零开始。系统地看，要把国内用户早已默认的保障（鉴别、售后、品牌背书）重新翻译给一个没有任何上下文的海外用户，并且让这份保障在流程里“看得见”。", "title": "跨境信任：先鉴别后发货", "updatedAt": 1790910000000, "id": "poizon"}, {"answer": "", "caseBody": "在 TikTok 上刷到带货视频时，画面里有一个购物袋图标，点开就是商品链接，可以直接在 App 内下单结算。直播中主播可以把正在讲的商品置顶，观众边看边买；品牌主页里还有 Shop 标签，像一个分好类的店铺。店铺页上的认证标识、评分、粉丝数和销量，帮用户判断这个“刷到”的商家靠不靠谱。从“这个好想要”到“已下单”，用户几乎不用离开正在看的内容。", "caseName": "TikTok · TikTok Shop", "fix": "在视频或直播中给商品一个固定、可识别的入口图标；点击后用浮层展示商品而不是整页跳转；把结算放在 App 内完成；直播中把正在讲的商品置顶；给店铺页做清晰的分类货架，承接想继续逛的人。", "order": 12, "question": "在你的产品里，用户产生“想要”的那一刻在哪个页面？从那里到完成购买需要跳几次页面？哪一次跳转可以变成浮层？", "scene": "你在朋友家看到一个很好用的小家电，问他在哪买的，他说“我也忘了，你自己搜搜吧”。等你回家，这个念头已经凉了。冲动在被看见的那一刻最强，路径每多一步，它就降一度温。", "strategy": "让商品入口长在内容上，而不是放在另一个页面；让购买流程以半屏、浮层的形式叠在内容之上；同时给出评分、销量、店铺认证等信号，弥补“刷到的”商品缺少的信任。", "sub": "让“想要”和“买到”之间只隔一次点击", "tag": "出海·内容电商", "thinking": "内容电商的本质是把“发现”和“购买”放进同一个画面。系统地看，有三个环节要打通：内容里能直接指认商品、点开后不离开当前语境、支付在 App 内完成。任何一环跳出去，转化都会大幅流失。", "title": "内容即货架", "updatedAt": 1790910000000, "id": "tiktokshop"}, {"answer": "", "caseBody": "Temu 以大量游戏化玩法和紧迫感提示快速增长，但也在欧洲遭到质疑。2024 年 5 月，欧洲消费者组织联盟 BEUC 投诉 Temu 使用暗模式，让消费者花得比原本想的更多，并让关闭账户变得复杂；德国消费者组织举例的提示包括“快点！已有 126 多人把这件商品加入购物车”。2025 年 7 月，欧盟委员会初步认定 Temu 在评估非法商品风险方面违反了《数字服务法》。它提醒设计师：在海外，增长手段本身就可能成为风险。", "caseName": "Temu · 欧洲市场的争议", "fix": "倒计时和库存提示必须来自真实数据；抽奖与优惠规则一屏说清楚；“关闭”按钮和“继续”按钮同样醒目；注销账号的路径不超过加入的步骤；在进入新市场前，先对照当地消费者保护法规审一遍增长玩法。", "order": 13, "question": "你的产品里有没有哪个提示或玩法，如果用户知道了背后的真实规则，会觉得被套路？你愿意把这个规则直接写在界面上吗？", "scene": "一个游乐场式的商场：进门就有转盘、倒计时、“只剩 3 件”的大喇叭，旁边还有人喊“已经有 100 多人放进购物车了！”。第一次去觉得热闹，第三次你开始怀疑：这些数字是真的吗？", "strategy": "用“用户事后会不会觉得被骗”来检验每一个增长设计。紧迫感必须真实可验证，奖励规则必须透明，退出和注销必须和加入一样容易。", "sub": "让人上瘾和让人上当，只隔一条线", "tag": "出海·增长伦理", "thinking": "游戏化能有效提升参与度，但当它利用的是信息不对称、虚假紧迫感或刻意设障时，就变成了暗模式。系统地看，出海产品还要面对一个国内不常遇到的变量：监管。欧盟、美国等市场对操纵性设计有明确的法律约束，短期增长可能换来长期的品牌和合规风险。", "title": "游戏化与暗模式的边界", "updatedAt": 1790910000000, "id": "temu"}, {"answer": "", "caseBody": "SHEIN 的商品页除了尺码表，还会在评价区汇总买家的合身反馈，许多评价会附上评价者的身材信息和所购尺码，以及上身照片。用户看到“和我差不多身高体重的人买了 S 码，说刚好”，比看一张数字表格更容易做决定。这些来自真实买家的数据，弥补了线上服装购物没有试衣间的缺口，也是它面对全球不同体型用户时的重要本地化手段。", "caseName": "SHEIN · 尺码与评价", "fix": "在选尺码按钮旁边直接显示“多数人反馈偏大/合身/偏小”；评价里展示评价者的身高体重和所购尺码；尺码表默认使用当地单位并支持切换；允许用户保存自己的身材数据，下次自动推荐尺码。", "order": 14, "question": "你的产品里，有没有某个决策是用户“只能猜”的？你能用哪些真实用户的数据，把这次猜测变成一次有依据的选择？", "scene": "一家开在全世界的服装店，却没有试衣间：同样写着 M 码，亚洲的 M 和美国的 M 差了一截，顾客只能靠猜，猜错了就退货。退货多了，顾客不再来，商家也赔钱。", "strategy": "把抽象的尺码表变成具体的参照：真实买家的身材数据、穿着反馈、偏大偏小的统计。按用户所在市场默认显示熟悉的单位，并记住用户自己的身材信息。", "sub": "用别人的身体，帮用户想象自己穿上的样子", "tag": "出海·本地化", "thinking": "出海不只是翻译文字，还要翻译标准：尺码、单位、体型差异都会影响决策。系统地看，尺码选择是一个高不确定、高退货成本的决策点，界面要用数据和“相似的人”来替用户降低不确定性。", "title": "跨文化尺码决策", "updatedAt": 1790910000000, "id": "shein"}, {"answer": "", "caseBody": "在 TikTok 上刷到用 CapCut 模板做的视频时，用户可以通过视频上的入口跳转到 CapCut 并直接打开同一个模板，替换成自己的照片或视频片段，节奏、转场、字幕都已经卡好，几分钟就能做出一条风格类似的视频，再发回 TikTok。每一条用模板做出的视频，又成为别人看到并复用这个模板的入口，创作工具本身变成了增长循环的一部分。", "caseName": "CapCut（剪映海外版）· 模板", "fix": "在成品内容旁边放“用这个模板”的入口；打开模板后直接进入替换素材的步骤，而不是完整编辑器；模板标注所需素材数量和时长；做完后一键发回原平台，形成“看到—做出—发布—被别人看到”的循环。", "order": 15, "question": "你的产品里，用户“从空白开始”的地方在哪里？如果把那里换成“选一个别人做好的再改改”，会发生什么？", "scene": "看到别人跳了一支很酷的舞，你也想试，但没人教你动作。另一种情况是，旁边有一块地垫，上面标好了每一步脚应该踩的位置，你只要照着踩，就能跳出差不多的效果。", "strategy": "让每一个看到成品的人都能一键复用同样的结构；把平台之间的跳转做成“带着模板一起走”；让替换素材的操作尽量只剩选照片和视频。", "sub": "让用户“照着做”，比让他“自己想”容易一百倍", "tag": "出海·创作工具", "thinking": "创作门槛的核心不是工具复杂，而是“从空白开始”的压力。系统地看，模板把一次创作拆成“选一个喜欢的成品”加“替换成我的素材”，把创意和技术的难度都交给了模板作者，用户只需要做最简单的那部分。", "title": "模板驱动创作", "updatedAt": 1790910000000, "id": "capcut"}];
+const COLORS = ["#FF4D6D","#FFD23F","#3BCEAC","#4D96FF","#B15EFF","#FF8B3D"];
+const TIPS = [
+  "先问：用户在这一秒想做什么？",
+  "主信息只能有一个，其余都往后退。",
+  "犹豫的地方给确定性，决定的地方让路。",
+  "增长是水车，不是漏斗。",
+  "空房间里没人敢说话，先放一把椅子。",
+  "高频功能要稳定，平台推荐要克制。",
+  "眯起眼睛，还能看出重点吗？",
+  "每个问题都值得一张新板子。"
+];
+const LS_KEY = "penguin-ux-board.v1";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rand = a => a[Math.floor(Math.random()*a.length)];
+
+let boards = [];
+let db = null, col = null, mode = "loading";
+let filterTag = "全部", query = "";
+let openId = null;
+
+/* ---------- penguin ---------- */
+const MAP = [
+"......kkkk......",
+"....kkkkkkkk....",
+"...kkkkkkkkkk...",
+"..kkkwwkkwwkkk..",
+"..kkwwwwwwwwkk..",
+"..kkwewwwwewkk..",
+"..kcwwwbbwwwck..",
+"..kkwwwbbwwwkk..",
+".kkkwwwwwwwwkkk.",
+"kkkwwwwwwwwwwkkk",
+"kkwwwwwwwwwwwwkk",
+".kwwwwwwwwwwwwk.",
+".kkwwwwwwwwwwkk.",
+"..kwwwwwwwwwwk..",
+"..kkwwwwwwwwkk..",
+"...kkkkkkkkkk...",
+"...ff......ff...",
+"..fff......fff.."];
+const peng = $("#peng");
+(function drawPenguin(){
+  let out = "";
+  MAP.forEach((row,y)=>[...row].forEach((ch,x)=>{
+    if(ch===".") return;
+    const cls = {k:"ink",w:"white",e:"eye",c:"cheek",b:"beak",f:"feet"}[ch];
+    const fill = {k:"#0B0B0B",w:"#FFFFFF",e:"#0B0B0B",c:"#FFFFFF",b:"#8A8A8A",f:"#8A8A8A"}[ch];
+    out += `<rect class="${cls}" x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`;
+  }));
+  peng.innerHTML = out;
+})();
+let tipIdx = 0;
+function pokePenguin(say){
+  const c = rand(COLORS);
+  peng.querySelectorAll(".beak,.feet").forEach(r=>r.setAttribute("fill",c));
+  peng.querySelectorAll(".cheek").forEach(r=>r.setAttribute("fill",rand(COLORS)));
+  peng.classList.remove("hop"); void peng.getBoundingClientRect(); peng.classList.add("hop");
+  const b = $("#bubble");
+  b.textContent = say || TIPS[tipIdx++ % TIPS.length];
+  b.style.boxShadow = `4px 4px 0 ${c}`;
+}
+peng.addEventListener("click", ()=>pokePenguin());
+peng.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pokePenguin(); }});
+
+/* ---------- colour feedback ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+document.addEventListener("pointerdown", e=>{
+  const c = rand(COLORS);
+  document.documentElement.style.setProperty("--flash", c);
+  const t = e.target.closest(".btn,.card,.chip");
+  if(t){ t.classList.add("flash"); setTimeout(()=>t.classList.remove("flash"),220); }
+  if(reduce) return;
+  for(let i=0;i<8;i++){
+    const p = document.createElement("div");
+    p.className = "pxl";
+    const a = (Math.PI*2/8)*i, d = 26 + Math.random()*18;
+    p.style.left = (e.clientX-4)+"px"; p.style.top = (e.clientY-4)+"px";
+    p.style.background = i%2 ? c : rand(COLORS);
+    p.style.setProperty("--dx", Math.round(Math.cos(a)*d/4)*4+"px");
+    p.style.setProperty("--dy", Math.round(Math.sin(a)*d/4)*4+"px");
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),520);
+  }
+}, {passive:true});
+
+let toastT;
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(()=>t.hidden=true, 2200);
+}
+
+/* ---------- storage ---------- */
+function setStatus(){
+  const s = $("#status");
+  s.classList.toggle("live", mode==="cloud");
+  s.querySelector("span").textContent = mode==="cloud" ? "已保存到云端" : mode==="local" ? "本机保存 · 可离线" : "连接中";
+}
+function lsLoad(){ try{ const v = JSON.parse(localStorage.getItem(LS_KEY)); return Array.isArray(v)?v:null; }catch(e){ return null; } }
+function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(boards)); }catch(e){} }
+
+async function saveBoard(b){
+  b.updatedAt = Date.now();
+  if(mode==="cloud"){
+    const {id, ...body} = b;
+    await col.doc(id).set(body);
+  } else {
+    const i = boards.findIndex(x=>x.id===b.id);
+    if(i>=0) boards[i]=b; else boards.push(b);
+    lsSave(); render();
+  }
+}
+async function removeBoard(id){
+  if(mode==="cloud"){ await col.doc(id).delete(); }
+  else { boards = boards.filter(b=>b.id!==id); lsSave(); render(); }
+}
+function newId(){
+  if(mode==="cloud") return col.doc().id;
+  return "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+function errMsg(e){
+  const c = e && e.code;
+  if(c==="invalid_argument") return "没有保存成功：你当前只有查看权限，请让作者把你设为协作者。";
+  if(c==="quota_exceeded") return "板子数量已达上限，删掉一些旧板子再试。";
+  return "没有保存成功，网络好像断了，稍后再点一次保存。";
+}
+
+/* ---------- render ---------- */
+function sorted(){ return [...boards].sort((a,b)=>(a.order??999)-(b.order??999) || (a.updatedAt||0)-(b.updatedAt||0)); }
+function renderChips(){
+  const tags = ["全部", ...new Set(sorted().map(b=>b.tag).filter(Boolean))];
+  if(!tags.includes(filterTag)) filterTag = "全部";
+  $("#chips").innerHTML = tags.map(t=>`<button type="button" class="chip" data-tag="${esc(t)}" aria-pressed="${t===filterTag}">${esc(t)}</button>`).join("");
+}
+function render(){
+  renderChips();
+  const q = query.trim().toLowerCase();
+  const list = sorted().filter(b=>{
+    if(filterTag!=="全部" && b.tag!==filterTag) return false;
+    if(!q) return true;
+    return [b.title,b.sub,b.tag,b.caseName,b.caseBody,b.scene,b.question].join(" ").toLowerCase().includes(q);
+  });
+  const all = sorted();
+  let html = list.map(b=>{
+    const n = String(all.indexOf(b)+1).padStart(2,"0");
+    return `<button type="button" class="card" data-id="${esc(b.id)}">
+      <div class="meta"><span>BOARD #${n}</span><span style="display:flex;gap:6px;align-items:center">${b.answer?'<span class="done">ANSWERED</span>':''}${b.tag?`<span class="tag">${esc(b.tag)}</span>`:''}</span></div>
+      <h2>${esc(b.title)}</h2>
+      ${b.sub?`<p class="sub">${esc(b.sub)}</p>`:''}
+      ${b.caseName?`<div class="case"><b>CASE</b><span>${esc(b.caseName)}</span></div>`:''}
+      ${b.question?`<p class="q">Q：${esc(b.question)}</p>`:''}
+    </button>`;
+  }).join("");
+  if(!list.length && boards.length) html = `<div class="empty px-box">没有找到匹配的板子，换个关键词试试。</div>`;
+  html += `<button type="button" class="card add-card" id="addCard"><span class="plus">+</span><span>上传一个新的破题板块</span></button>`;
+  $("#grid").innerHTML = html;
+  if(openId && !$("#overlay").hidden && $("#overlay").dataset.view==="detail"){
+    const b = boards.find(x=>x.id===openId);
+    if(b) openDetail(openId, true); else closeOverlay();
+  }
+}
+
+/* ---------- detail ---------- */
+const SECS = [
+  ["scene","画面","SCENE"],["thinking","设计思维","SYSTEM"],["strategy","UX 策略","STRATEGY"],["fix","改进办法","FIX"]
+];
+function openDetail(id, keepAnswer){
+  const b = boards.find(x=>x.id===id); if(!b) return;
+  openId = id;
+  const ov = $("#overlay");
+  const draft = keepAnswer && $("#ans") ? $("#ans").value : null;
+  ov.dataset.view = "detail";
+  ov.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <div class="panel-top">
+      <div><div class="kicker">${esc(b.tag||"UX")} · BOARD</div><h2 id="dTitle">${esc(b.title)}</h2>${b.sub?`<p class="sub">${esc(b.sub)}</p>`:''}</div>
+      <button class="x" type="button" data-act="close" aria-label="关闭">X</button>
+    </div>
+    ${SECS.filter(([k])=>b[k]).map(([k,zh,en])=>`<div class="sec"><div class="lab">${zh}<small>${en}</small></div><p>${esc(b[k])}</p></div>`).join("")}
+    ${(b.caseName||b.caseBody)?`<div class="sec case-sec"><div class="lab">大厂案例<small>CASE</small></div><div class="body">${b.caseName?`<h3>${esc(b.caseName)}</h3>`:''}<p>${esc(b.caseBody)}</p></div></div>`:''}
+    ${b.question?`<div class="qbox"><div class="lab">YOUR TURN · 留给你的问题</div><p>${esc(b.question)}</p>
+      <label for="ans" class="lab" style="display:block;margin-bottom:6px">我的思考</label>
+      <textarea id="ans" placeholder="先写下你的第一反应，不用完美。"></textarea>
+      <div class="row"><button class="btn" type="button" data-act="saveAns"><span>SAVE</span><span class="zh">保存我的思考</span></button><small id="ansHint">${b.answer?"已保存过，可继续改":"还没写"}</small></div></div>`:''}
+    <div class="actions">
+      <button class="btn danger" type="button" data-act="askDel"><span>DEL</span><span class="zh">删除</span></button>
+      <button class="btn primary" type="button" data-act="edit"><span>EDIT</span><span class="zh">修改这块板</span></button>
+    </div>
+    <div id="confirmSlot"></div>
+  </div>`;
+  const ta = $("#ans"); if(ta) ta.value = draft ?? (b.answer||"");
+  showOverlay();
+}
+function showOverlay(){ const ov=$("#overlay"); ov.hidden=false; document.body.style.overflow="hidden"; const f=ov.querySelector(".x"); f&&f.focus({preventScroll:true}); }
+function closeOverlay(){ const ov=$("#overlay"); ov.hidden=true; ov.innerHTML=""; ov.dataset.view=""; openId=null; document.body.style.overflow=""; }
+
+/* ---------- editor ---------- */
+const FIELDS = [
+  ["title","标题","TITLE","input",true],["tag","标签","TAG","input"],
+  ["sub","一句话破题","ONE-LINER","input"],["scene","画面：用一个比喻讲清问题","SCENE","textarea"],
+  ["thinking","设计思维","SYSTEM","textarea"],["strategy","UX 策略","STRATEGY","textarea"],
+  ["fix","实际改进办法","FIX","textarea"],["caseName","案例：App · 功能","CASE","input"],
+  ["caseBody","案例拆解","CASE BODY","textarea"],["question","留给自己的问题","QUESTION","textarea"]
+];
+function openEditor(id){
+  const b = id ? boards.find(x=>x.id===id) : null;
+  openId = id || null;
+  const ov = $("#overlay"); ov.dataset.view = "edit";
+  const f = k => { const [key,zh,en,type,req] = FIELDS.find(x=>x[0]===k);
+    const v = esc(b ? b[key] : "");
+    const ph = {title:"例如：搜索结果页",tag:"例如：搜索",sub:"一句话说出这个问题的解法",caseName:"例如：抖音 · 搜索联想"}[key]||"";
+    return `<div class="field"><label for="f_${key}">${zh}<small>${en}${req?" · 必填":""}</small></label>${type==="input"
+      ? `<input id="f_${key}" value="${v}" placeholder="${ph}" ${req?"required":""}>`
+      : `<textarea id="f_${key}">${v}</textarea>`}</div>`; };
+  ov.innerHTML = `<div class="panel" role="dialog" aria-modal="true" aria-labelledby="eTitle">
+    <div class="panel-top"><div><div class="kicker">${b?"EDIT BOARD":"NEW BOARD"}</div><h2 id="eTitle">${b?"修改板块":"上传新板块"}</h2></div>
+      <button class="x" type="button" data-act="close" aria-label="关闭">X</button></div>
+    <form class="form" id="form" novalidate>
+      <div class="two">${f("title")}${f("tag")}</div>
+      ${f("sub")}${f("scene")}${f("thinking")}${f("strategy")}${f("fix")}${f("caseName")}${f("caseBody")}${f("question")}
+      <div id="formErr"></div>
+      <div class="actions">
+        <button class="btn" type="button" data-act="${b?"back":"close"}"><span>ESC</span><span class="zh">取消</span></button>
+        <button class="btn primary" type="submit"><span>SAVE</span><span class="zh">保存板块</span></button>
+      </div>
+    </form></div>`;
+  showOverlay();
+  $("#f_title").focus({preventScroll:true});
+  $("#form").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const data = {};
+    FIELDS.forEach(([k])=> data[k] = $("#f_"+k).value.trim());
+    if(!data.title){ $("#formErr").innerHTML = `<div class="err">给这块板起个标题再保存。</div>`; $("#f_title").focus(); return; }
+    const maxOrder = boards.reduce((m,x)=>Math.max(m,x.order||0),0);
+    const next = b ? {...b, ...data} : {id:newId(), order:maxOrder+1, answer:"", ...data};
+    const btn = e.submitter; if(btn) btn.disabled = true;
+    try{
+      await saveBoard(next);
+      if(mode==="cloud"){ const i=boards.findIndex(x=>x.id===next.id); if(i>=0) boards[i]=next; else boards.push(next); render(); }
+      pokePenguin(b ? "改好啦，板子更清楚了。" : "新板子上墙！");
+      toast(b ? "已保存修改" : "已上传新板块");
+      openDetail(next.id);
+    }catch(err){
+      $("#formErr").innerHTML = `<div class="err">${esc(errMsg(err))}</div>`;
+      if(btn) btn.disabled = false;
+    }
+  });
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click", async e=>{
+  const chip = e.target.closest(".chip");
+  if(chip){ filterTag = chip.dataset.tag; render(); return; }
+  if(e.target.closest("#addCard") || e.target.closest("#newBtn")){ openEditor(null); return; }
+  const card = e.target.closest(".card[data-id]");
+  if(card){ openDetail(card.dataset.id); return; }
+  const ov = $("#overlay");
+  if(e.target===ov){ closeOverlay(); return; }
+  const act = e.target.closest("[data-act]"); if(!act) return;
+  const a = act.dataset.act, b = boards.find(x=>x.id===openId);
+  if(a==="close") closeOverlay();
+  else if(a==="back" && b) openDetail(b.id);
+  else if(a==="edit" && b) openEditor(b.id);
+  else if(a==="askDel" && b){
+    $("#confirmSlot").innerHTML = `<div class="confirm"><span>确定删除「${esc(b.title)}」？删除后不能恢复。</span>
+      <button class="btn danger" type="button" data-act="del"><span class="zh">确认删除</span></button>
+      <button class="btn" type="button" data-act="noDel"><span class="zh">保留</span></button></div>`;
+  }
+  else if(a==="noDel") $("#confirmSlot").innerHTML = "";
+  else if(a==="del" && b){
+    try{ await removeBoard(b.id); if(mode==="cloud"){ boards=boards.filter(x=>x.id!==b.id); render(); } closeOverlay(); toast("已删除"); pokePenguin("拜拜，这块板。"); }
+    catch(err){ toast(errMsg(err)); }
+  }
+  else if(a==="saveAns" && b){
+    const val = $("#ans").value.trim();
+    act.disabled = true;
+    try{
+      if(mode==="cloud"){ b.updatedAt=Date.now(); await col.doc(b.id).update({answer:val, updatedAt:b.updatedAt}); b.answer=val; render(); }
+      else { b.answer = val; await saveBoard(b); }
+      $("#ansHint").textContent = "已保存 ✓"; pokePenguin("好问题，好回答。"); toast("已保存你的思考");
+    }catch(err){ toast(errMsg(err)); }
+    act.disabled = false;
+  }
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#overlay").hidden) closeOverlay(); });
+$("#q").addEventListener("input", e=>{ query = e.target.value; render(); });
+
+/* ---------- backup ---------- */
+$("#exportBtn").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(sorted(), null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  const d = new Date(); const stamp = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  a.href = URL.createObjectURL(blob); a.download = "破题板备份-"+stamp+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  toast("已导出 "+boards.length+" 块板子"); pokePenguin("备份好了，换手机也不怕。");
+});
+$("#importBtn").addEventListener("click", ()=>$("#importFile").click());
+$("#importFile").addEventListener("change", async e=>{
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  try{
+    const list = JSON.parse(await f.text());
+    if(!Array.isArray(list)) throw 0;
+    const valid = list.filter(x=>x && typeof x==="object" && x.title);
+    if(!valid.length) throw 0;
+    let added = 0, updated = 0;
+    valid.forEach(x=>{
+      const b = {...x, id: String(x.id || newId())};
+      const i = boards.findIndex(y=>y.id===b.id);
+      if(i>=0){ boards[i] = b; updated++; } else { boards.push(b); added++; }
+    });
+    lsSave(); render();
+    toast("导入完成：新增 "+added+" 块，更新 "+updated+" 块"); pokePenguin("新板子到货！");
+  }catch(err){ toast("这个文件读不出来，请选择从这里导出的 .json 备份"); }
+});
+
+/* ---------- offline ---------- */
+if("serviceWorker" in navigator && location.protocol !== "file:"){
+  window.addEventListener("load", ()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+
+/* ---------- boot ---------- */
+function useLocal(){
+  mode = "local";
+  boards = lsLoad() || FALLBACK.map(x=>({...x}));
+  setStatus(); render();
+}
+useLocal();
+})();
+</script>
+
+</body>
+</html>
