@@ -1,5 +1,5 @@
 // 企鹅破题板 service worker: app shell cached for offline use.
-const VERSION = "poti-v1";
+const VERSION = "poti-v7";
 const SHELL = [
   "./",
   "./index.html",
